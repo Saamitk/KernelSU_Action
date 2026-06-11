@@ -211,12 +211,17 @@ jobs:
       if: env.ENABLE_KERNELSU == 'true'
       run: |
         cd $GITHUB_WORKSPACE/kernel_workspace/android-kernel
-        git clone https://gitlab.com/tiann/susfs4ksu.git
-        cp susfs4ksu/kernel_patches/KernelSU/all_patches/5.10/* ./
-        cp susfs4ksu/kernel_patches/fs/* ./fs/
-        cp susfs4ksu/kernel_patches/include/linux/* ./include/linux/
-        cd susfs4ksu/kernel_patches
-        git apply 4.14/0001-add-susfs-to-kernel-4.14.patch || echo "Patch applied"
+        git clone https://github.com/Star-Seven/susfs4ksu.git susfs4ksu
+        cp susfs4ksu/kernel_patches/KernelSU/10_enable_susfs_for_ksu.patch ./KernelSU/
+        cp susfs4ksu/kernel_patches/50_add_susfs_in_kernel-4.14.patch ./
+        cp -r susfs4ksu/kernel_patches/fs/* ./fs/
+        cp -r susfs4ksu/kernel_patches/include/linux/* ./include/linux/
+        
+        cd KernelSU
+        patch -p1 < 10_enable_susfs_for_ksu.patch || echo "KernelSU patch skipped or already applied"
+        
+        cd ../
+        patch -p1 < 50_add_susfs_in_kernel-4.14.patch || echo "Kernel patch skipped or already applied"
 
     - name: Setup Configuration for Kernel
       run: |
