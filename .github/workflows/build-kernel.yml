@@ -207,6 +207,17 @@ jobs:
         KSU_VERSION=$(cd KernelSU && expr $(/usr/bin/git rev-list --count HEAD) + 10200)
         echo "UPLOADNAME=-KernelSU_$KSU_VERSION" >> $GITHUB_ENV
 
+    - name: Inject SUSFS Patches
+      if: env.ENABLE_KERNELSU == 'true'
+      run: |
+        cd $GITHUB_WORKSPACE/kernel_workspace/android-kernel
+        git clone https://gitlab.com/tiann/susfs4ksu.git
+        cp susfs4ksu/kernel_patches/KernelSU/all_patches/5.10/* ./
+        cp susfs4ksu/kernel_patches/fs/* ./fs/
+        cp susfs4ksu/kernel_patches/include/linux/* ./include/linux/
+        cd susfs4ksu/kernel_patches
+        git apply 4.14/0001-add-susfs-to-kernel-4.14.patch || echo "Patch applied"
+
     - name: Setup Configuration for Kernel
       run: |
         cd $GITHUB_WORKSPACE/kernel_workspace/android-kernel
@@ -218,6 +229,10 @@ jobs:
             else
                 echo "CONFIG_KSU=y" >> arch/${{ env.ARCH }}/configs/${{ env.KERNEL_CONFIG }}
             fi
+            echo "CONFIG_KSU_SUSFS=y" >> arch/${{ env.ARCH }}/configs/${{ env.KERNEL_CONFIG }}
+            echo "CONFIG_KSU_SUSFS_SUS_PATH=y" >> arch/${{ env.ARCH }}/configs/${{ env.KERNEL_CONFIG }}
+            echo "CONFIG_KSU_SUSFS_SUS_MOUNT=y" >> arch/${{ env.ARCH }}/configs/${{ env.KERNEL_CONFIG }}
+            echo "CONFIG_KSU_SUSFS_TRY_UMOUNT=y" >> arch/${{ env.ARCH }}/configs/${{ env.KERNEL_CONFIG }}
         fi
         if [ ${{ env.ADD_KPROBES_CONFIG }} = true -a ${{ env.APPLY_KSU_PATCH }} != true ]; then
             echo "CONFIG_MODULES=y" >> arch/${{ env.ARCH }}/configs/${{ env.KERNEL_CONFIG }}
